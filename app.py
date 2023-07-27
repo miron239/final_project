@@ -9,6 +9,7 @@ from flask import g
 
 from helpers import apology, login_required, lookup, usd, sql_data_to_list_of_dicts
 
+
 # Configure application
 app = Flask(__name__)
 
@@ -76,6 +77,8 @@ def login():
             return apology("invalid username or password", 403)
         
         session["user_id"] = rows[0]["id"]
+        session["user_role"] = rows[0]["role"]
+        session["user_rights"] = rows[0]["rights"]
         return redirect("/")
     
     if request.method == "GET":
@@ -106,7 +109,10 @@ def login():
             return apology("invalid username and/or password", 403)
 
         # Remember which user has logged in
+        print(rows)
         session["user_id"] = rows[0]["id"]
+        session["user_role"] = rows[0]["role"]
+        session["user_rights"] = rows[0]["rights"]
 
         # Redirect user to home page
         return redirect("/")
@@ -132,6 +138,38 @@ def logout():
 def quote():
     """Get stock quote."""
     return apology("TODO")
+
+
+@app.route("/new_dish", methods=["GET", "POST"])
+@login_required
+def new_dish():
+    if request.method == "POST":
+        if session["user_role"] == "admin":
+            name = request.form.get('name')
+            price = request.form.get('price')
+            livetime = request.form.get('livetime')
+
+            if not name:
+                return apology("Name can not be empty")
+            if not price:
+                return apology("Price can not be empty")
+            if not livetime:
+                return apology("Price can not be livetime")
+            
+            with sqlite3.connect("orders.db") as users:
+                cursor = users.cursor()
+                try:
+                    cursor.execute("INSERT INTO dishes (name, dish_price, livetime) VALUES (?, ?, ?)",(name, price, livetime))
+                except:
+                    return apology("Name is already in use")    
+            users.commit()    
+        else:
+            return apology("You are not the manager")
+    else:
+        return render_template("new_dish.html")
+    """Get stock quote."""
+    return apology("TODO")
+
 
 
 @app.route("/register", methods=["GET", "POST"])
