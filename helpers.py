@@ -6,6 +6,7 @@ import requests
 import subprocess
 import urllib
 import uuid
+import re
 
 from flask import redirect, render_template, session
 from functools import wraps
@@ -91,3 +92,7 @@ def sql_data_to_list_of_dicts(path_to_db, select_query):
           return []
       finally:
           con.close()
+
+def extract_first_number(s):
+    match = re.search(r'\d+', s)
+    return int(match.group()) if match else None

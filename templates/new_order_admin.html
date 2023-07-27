@@ -7,8 +7,8 @@
     <form action="/new_order_admin" method="post">
         <div class = "form_group">
             <select name = "user_select">
-                {% for user in users %}
-                <option>{{ user[0] }}</option>
+                {% for user_select in users %}
+                <option>{{ user_select }}</option>
                 {% endfor %}
             </select>
         </div>

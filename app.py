@@ -7,7 +7,7 @@ from tempfile import mkdtemp
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import g
 
-from helpers import apology, login_required, lookup, usd, sql_data_to_list_of_dicts
+from helpers import apology, login_required, lookup, usd, sql_data_to_list_of_dicts, extract_first_number
 
 # Configure application
 app = Flask(__name__)
@@ -208,7 +208,8 @@ def new_order_admin():
     if request.method == "POST":
         user_id = request.form.get('user_id')
         user_select = request.form.get('user_select')
-
+        t = extract_first_number(user_select)
+        print(user_select, "    ", t)
         try:
             with sqlite3.connect("orders.db") as connection:
                 cursor = connection.cursor()
@@ -216,7 +217,7 @@ def new_order_admin():
                 if user_id:
                     cursor.execute("INSERT INTO orders (user_id) VALUES (?)", (user_id,))
                 elif user_select:
-                    cursor.execute("INSERT INTO orders (user_id) VALUES (?)", (user_select,))
+                    cursor.execute("INSERT INTO orders (user_id) VALUES (?)", (t,))
                 session["order_id"] = cursor.lastrowid
                 connection.commit()
         except sqlite3.Error:
@@ -226,29 +227,36 @@ def new_order_admin():
     else:
         connect = sqlite3.connect('orders.db')
         cursor = connect.cursor()
-        result = cursor.execute("SELECT username FROM users")
+        result = cursor.execute("SELECT id, username FROM users")
         return render_template("new_order_admin.html", users=result)
+
 
 @app.route("/add_order_item", methods=["GET", "POST"])
 def add_order_item():
     if request.method == "POST":
+        # TODO(решить key error при остутвии заказа)
         order_id = session["order_id"]
-        dish_id = request.form.get('dish_id')
+
+        dish = request.form.get("chosen_dish")
+
+        t = extract_first_number(dish)
+
         try:
             with sqlite3.connect("orders.db") as connection:
                 cursor = connection.cursor()
 
-                if order_id and dish_id:
-                    cursor.execute("INSERT INTO ordered_items (order_id, dish_id) VALUES (?, ?)", (order_id, dish_id))
+                cursor.execute("INSERT INTO ordered_items (order_id, dish_id) VALUES (?, ?)", (order_id, t))
                 session["order_id"] = cursor.lastrowid
                 connection.commit()
         except sqlite3.Error:
-            return apology("Have you created a order or choosed the dish?")
+            return apology("Have you created a order or chose the dish?")
+        session["order_id"] = order_id
+        return redirect("/add_order_item")
     else:
         order_id = session["order_id"]
         connect = sqlite3.connect('orders.db')
         cursor = connect.cursor()
-        result = cursor.execute("SELECT (name || ' - ' || dish_price) AS dishes FROM dishes;")
+        result = cursor.execute("SELECT id, (name || ' - ' || dish_price) AS dishes  FROM dishes")
         return render_template("add_order_item.html", dishes=result, order_id=order_id)
 
 
