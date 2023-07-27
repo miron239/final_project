@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}
+    New orders admin
+{% endblock %}
+
+{% block main %}
+    <form action="/new_order_admin" method="post">
+        <div class = "form_group">
+            <select name = "user_select">
+                {% for user in users %}
+                <option>{{ user[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <h4>Or enter id manually</h4>
+        <div class="mb-3">
+            <input class="form-control mx-auto w-auto" id="user_id" name="user_id" placeholder="User_id" type="number">
+        </div>
+        <button class="btn btn-primary" type="Sell">Create new order</button>
+    </form>
+{% endblock %}
