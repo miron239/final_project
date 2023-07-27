@@ -217,11 +217,10 @@ def new_order_admin():
                     cursor.execute("INSERT INTO orders (user_id) VALUES (?)", (user_id,))
                 elif user_select:
                     cursor.execute("INSERT INTO orders (user_id) VALUES (?)", (user_select,))
-
+                session["order_id"] = cursor.lastrowid
                 connection.commit()
         except sqlite3.Error:
             return apology("Error while creating order")
-
 
         return redirect("/")
     else:
@@ -229,6 +228,28 @@ def new_order_admin():
         cursor = connect.cursor()
         result = cursor.execute("SELECT username FROM users")
         return render_template("new_order_admin.html", users=result)
+
+@app.route("/add_order_item", methods=["GET", "POST"])
+def add_order_item():
+    if request.method == "POST":
+        order_id = session["order_id"]
+        dish_id = request.form.get('dish_id')
+        try:
+            with sqlite3.connect("orders.db") as connection:
+                cursor = connection.cursor()
+
+                if order_id and dish_id:
+                    cursor.execute("INSERT INTO ordered_items (order_id, dish_id) VALUES (?, ?)", (order_id, dish_id))
+                session["order_id"] = cursor.lastrowid
+                connection.commit()
+        except sqlite3.Error:
+            return apology("Have you created a order or choosed the dish?")
+    else:
+        order_id = session["order_id"]
+        connect = sqlite3.connect('orders.db')
+        cursor = connect.cursor()
+        result = cursor.execute("SELECT (name || ' - ' || dish_price) AS dishes FROM dishes;")
+        return render_template("add_order_item.html", dishes=result, order_id=order_id)
 
 
 @app.route("/register", methods=["GET", "POST"])
